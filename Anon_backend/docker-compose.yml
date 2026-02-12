@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-fullstacktemplate_db}
+      POSTGRES_USER: ${POSTGRES_USER:-appuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    ports:
+      - "${DB_PORT:-5434}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-appuser} -d ${POSTGRES_DB:-fullstacktemplate_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+    ports:
+      - "${BACKEND_PORT:-5001}:5001"
+    volumes:
+      - ./certs:/app/certs:ro
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ASPNETCORE_URLS: "https://+:5001"
+      Kestrel__Endpoints__Https__Url: "https://+:5001"
+      Kestrel__Endpoints__Https__Certificate__Path: "/app/certs/localhost+2.pem"
+      Kestrel__Endpoints__Https__Certificate__KeyPath: "/app/certs/localhost+2-key.pem"
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=${POSTGRES_DB:-fullstacktemplate_db};Username=${POSTGRES_USER:-appuser};Password=${POSTGRES_PASSWORD:-changeme}"
+      # Auth0 Configuration
+      Auth0__Domain: ${AUTH0_DOMAIN}
+      Auth0__ClientId: ${AUTH0_CLIENT_ID}
+      Auth0__ClientSecret: ${AUTH0_CLIENT_SECRET}
+      Auth0__Audience: ${AUTH0_AUDIENCE}
+      Auth0__OrganizationId: ${AUTH0_ORGANIZATION_ID:-}
+      # Security - comma-separated allowed origins
+      Security__AllowedOrigins__0: ${ALLOWED_ORIGIN_1:-https://localhost:5000}
+      Security__AllowedOrigins__1: ${ALLOWED_ORIGIN_2:-}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

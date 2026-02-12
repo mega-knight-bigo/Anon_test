@@ -1,0 +1,24 @@
+# Environment files (contain secrets)
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Certificates (local development only)
+*.pem
+*.key
+*.crt
+*.pfx
+
+# Logs
+*.log
+logs/
